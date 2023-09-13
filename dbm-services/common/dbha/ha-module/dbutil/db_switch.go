@@ -62,8 +62,8 @@ type DnsInfo struct {
 // BindEntry TODO
 type BindEntry struct {
 	Dns     []DnsInfo
-	Polaris []interface{}
-	Clb     []interface{}
+	Polaris []PolarisInfo
+	Clb     []ClbInfo
 }
 
 // ProxyInfo TODO
@@ -200,7 +200,7 @@ func (ins *BaseSwitch) DeleteNameService(entry BindEntry) error {
 
 	if entry.Clb != nil {
 		ins.ReportLogs(constvar.InfoResult, fmt.Sprintf("try to release clb entry"))
-		/*clbClient := client.NewNameServiceClient(&conf.DNS.ClbConf, conf.GetCloudId())
+		clbClient := client.NewNameServiceClient(&conf.DNS.ClbConf, conf.GetCloudId())
 		for _, clb := range entry.Clb {
 			addr := fmt.Sprintf("%s:%d", ins.Ip, ins.Port)
 			ips, err := clbClient.ClbGetTargets(
@@ -229,12 +229,12 @@ func (ins *BaseSwitch) DeleteNameService(entry BindEntry) error {
 				}
 				break
 			}
-		}*/
+		}
 	}
 
 	if entry.Polaris != nil {
 		ins.ReportLogs(constvar.InfoResult, fmt.Sprintf("try to release polaris entry"))
-		/*polarisClient := client.NewNameServiceClient(&conf.DNS.PolarisConf, conf.GetCloudId())
+		polarisClient := client.NewNameServiceClient(&conf.DNS.PolarisConf, conf.GetCloudId())
 		for _, pinfo := range entry.Polaris {
 			addr := fmt.Sprintf("%s:%d", ins.Ip, ins.Port)
 			ips, err := polarisClient.GetPolarisTargets(pinfo.Service)
@@ -260,7 +260,7 @@ func (ins *BaseSwitch) DeleteNameService(entry BindEntry) error {
 				}
 				break
 			}
-		}*/
+		}
 	}
 
 	if !(dnsFlag && clbFlag && polarisFlag) {

@@ -175,11 +175,16 @@ func (ins *RedisProxySwitchInfo) KickOffClb() error {
 		return nil
 	}
 
-	/*return ins.DeleteNameService(dbutil.BindEntry{
-		Clb: ins.ApiGw.ServiceEntry.Clb,
-	})*/
-	// cmdb not support fetch clb information
-	return nil
+	err, entry := ins.GetEntryDetailInfo()
+	if err != nil {
+		log.Logger.Infof("switch proxy no need to kickoff CLB, info:%s",
+			ins.ShowSwitchInstanceInfo())
+		return err
+	}
+
+	return ins.DeleteNameService(dbutil.BindEntry{
+		Clb: entry.Clb,
+	})
 }
 
 // KickOffPolaris TODO
@@ -190,11 +195,45 @@ func (ins *RedisProxySwitchInfo) KickOffPolaris() error {
 		return nil
 	}
 
-	/*return ins.DeleteNameService(dbutil.BindEntry{
-		Polaris: ins.ApiGw.ServiceEntry.Polaris,
-	})*/
-	// cmdb not support fetch polaris information
-	return nil
+	err, entry := ins.GetEntryDetailInfo()
+	if err != nil {
+		return err
+	}
+
+	return ins.DeleteNameService(dbutil.BindEntry{
+		Polaris: entry.Polaris,
+	})
+}
+
+// GetEntryDetailInfo get clb/polaris/dns information for entry detail
+func (ins *RedisProxySwitchInfo) GetEntryDetailInfo() (error, *dbutil.BindEntry) {
+	entry, err := ins.CmDBClient.GetEntryDetail(ins.Cluster)
+	if err != nil {
+		log.Logger.Errorf("GetEntryDetail failed, info:%s,err:%s",
+			ins.ShowSwitchInstanceInfo(), err.Error())
+		return err, nil
+	}
+
+	clusterEntryInfo, ok := entry[ins.Cluster]
+	if !ok {
+		entryErr := fmt.Errorf("GetEntryDetail can not find [%s] in [%v]",
+			ins.Cluster, entry)
+		log.Logger.Errorf(entryErr.Error())
+		return entryErr, nil
+	}
+
+	var dentry dbutil.BindEntry
+	rawData, err := json.Marshal(clusterEntryInfo)
+	if err != nil {
+		return fmt.Errorf("marshal instance info:%s failed:%s",
+			clusterEntryInfo, err.Error()), nil
+	}
+
+	if err = json.Unmarshal(rawData, &dentry); err != nil {
+		return fmt.Errorf("unmarshal instance info failed:%s",
+			err.Error()), nil
+	}
+	return nil, &dentry
 }
 
 // UnMarshalRedisInstanceByCmdb parse the information from cmdb
